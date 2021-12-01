@@ -1,0 +1,26 @@
+{
+  "name": "intersect-selectors",
+  "version": "0.0.1",
+  "main": "index.js",
+  "keywords": [
+    "intersect",
+    "css",
+    "selectors"
+  ],
+  "author": "Yash Singh",
+  "license": "MIT",
+  "description": "Finds the intersection of multiple CSS Selectors",
+  "dependencies": {
+    "group-array": "^1.0.0",
+    "merge-array": "^1.0.0",
+    "parsel-js": "^1.0.2"
+  },
+  "devDependencies": {
+    "prettier": "^2.5.0",
+    "prettier-plugin-jsdoc": "^0.3.30"
+  },
+  "scripts": {
+    "lint": "prettier --check .",
+    "lint:fix": "prettier --write ."
+  }
+}
