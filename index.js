@@ -5,6 +5,7 @@ const parsel = require('parsel-js');
 /**
  * @typedef {Object} SelectorState
  * @property {string} type The tag name of the selector
+ * @property {string} [namespace='*'] The namespace of the selector ('*' if not specified)
  * @property {string} pseudoElement The pseudo element of the selector
  * @property {{ name: string; argument: string }[]} pseudoClasses List of
  *   pseudo-classes that the selector matches
@@ -734,6 +735,7 @@ function extractInfo(tokens) {
 
       case 'type':
         state.type = token.name;
+        state.namespace = token.namespace || '*';
         break;
 
       case 'class':
@@ -789,6 +791,28 @@ function extractInfo(tokens) {
  */
 function intersects(token1, token2) {
   const finalState = {};
+
+  if (token1.namespace !== token2.namespace) {
+    if (
+      token1.namespace !== '*' &&
+      token2.namespace !== '*'
+    ) {
+      return false;
+    }
+  } else {
+    finalState.namespace = token1.namespace || token2.namespace;
+  }
+
+  if (!finalState.namespace) {
+    console.log('here', token1, token2, finalState)
+    if (token1.namespace && token1.namespace !== '*') {
+      finalState.namespace = token1.namespace;
+    } else if (token2.namespace && token2.namespace !== '*') {
+      finalState.namespace = token2.namespace;
+    } else if (token1.namespace || token2.namespace) {
+      finalState.namespace = '*';
+    }
+  }
 
   if (token1.type !== token2.type) {
     if (
@@ -849,8 +873,12 @@ function intersects(token1, token2) {
 function stringifyState(state) {
   let result = '';
 
+  console.log('state', state);
+  if (state.namespace && state.namespace !== '*') {
+    result = `${state.namespace}|`;
+  }
   if (state.type) {
-    result = state.type;
+    result += state.type;
   }
 
   if (state.pseudoElement) {
