@@ -27,10 +27,10 @@ function booleanCombinations(length) {
   let results = [[true], [false]];
 
   while (results[0].length < length) {
-    results = results.reduce((accumalatorResults, booleanSwitches) => {
-      accumalatorResults.push(booleanSwitches.concat(true));
-      accumalatorResults.push(booleanSwitches.concat(false));
-      return accumalatorResults;
+    results = results.reduce((accumulatorResults, booleanSwitches) => {
+      accumulatorResults.push(booleanSwitches.concat(true));
+      accumulatorResults.push(booleanSwitches.concat(false));
+      return accumulatorResults;
     }, []);
   }
 
@@ -115,7 +115,7 @@ function intersectsAttributes(...attributeSelectors) {
     );
   }
 
-  /** All the anchoring (start/end) logic into a seperate function because it appears twice */
+  /** All the anchoring (start/end) logic into a separate function because it appears twice */
   function anchoringWork(stringMethod, operator, piping = false) {
     /**
      * Compares if two anchorings are valid together
@@ -385,10 +385,10 @@ function intersectsAttributes(...attributeSelectors) {
               compareIncludes(sensitiveInclusion, resultingAttribute.value) ===
               -1
           )
-          .forEach((comparasion, comparasionIndex) => {
-            if (comparasion) {
+          .forEach((comparison, comparisonIndex) => {
+            if (comparison) {
               match = true;
-              sensitiveIncludes[comparasionIndex] = resultingAttribute.value;
+              sensitiveIncludes[comparisonIndex] = resultingAttribute.value;
             }
           });
         if (!match) {
@@ -397,11 +397,11 @@ function intersectsAttributes(...attributeSelectors) {
         sensitiveIncludes = [...new Set(sensitiveIncludes)];
         insensitiveIncludes = insensitiveIncludes.filter(
           (insensitiveInclusion) => {
-            const comparasion = compareIncludes(
+            const comparison = compareIncludes(
               insensitiveInclusion,
               resultingAttribute.value.toLowerCase()
             );
-            if (comparasion === null || comparasion === 1) {
+            if (comparison === null || comparison === 1) {
               return true;
             }
             return false;
@@ -434,10 +434,10 @@ function intersectsAttributes(...attributeSelectors) {
                 resultingAttribute.value.toLowerCase()
               ) === -1
           )
-          .forEach((comparasion, comparasionIndex) => {
-            if (comparasion) {
+          .forEach((comparison, comparisonIndex) => {
+            if (comparison) {
               match = true;
-              insensitiveIncludes[comparasionIndex] =
+              insensitiveIncludes[comparisonIndex] =
                 resultingAttribute.value.toLowerCase();
             }
           });
@@ -918,7 +918,7 @@ function intersectSelectors(...selectors) {
 
   let parsed = selectors.map(parsel.tokenize);
 
-  // Split into array of comma-seperated selectors
+  // Split into array of comma-separated selectors
   parsed = parsed.map((parsedSelector) =>
     parsedSelector.reduce(
       (accumulatorParts, part) =>
@@ -934,14 +934,14 @@ function intersectSelectors(...selectors) {
 
   // parsed, right now:
   // Array<       // The main array of selectors
-  //   Array<     // An array of comma-seperated subselectors
+  //   Array<     // An array of comma-separated subselectors
   //     Array<   // An array of tokens in those subselectors
   //       Token
   //     >
   //   >
   // >
 
-  // If the selector is comma-seperated, map each part onto each one of the others
+  // If the selector is comma-separated, map each part onto each one of the others
   // E.g.
   // (a ∪ b) ∩ (c ∪ d)
   // a --------> c <-|
@@ -951,11 +951,11 @@ function intersectSelectors(...selectors) {
   // This will be ('a' ∩ 'c') ∪ ('a' ∩ 'd') ∪ ('b' ∩ 'c') ∪ ('b' ∩ 'd')
   // Basically the distributive property applied in set theory
   if (parsed.find((parsedSelector) => parsedSelector.length > 1)) {
-    let parsedMap = parsed[0].reduce((accumalatorMap, currentlyParsed) => {
+    let parsedMap = parsed[0].reduce((accumulatorMap, currentlyParsed) => {
       parsed[1].forEach((secondParsedSelector) => {
-        accumalatorMap.push([currentlyParsed, secondParsedSelector]);
+        accumulatorMap.push([currentlyParsed, secondParsedSelector]);
       });
-      return accumalatorMap;
+      return accumulatorMap;
     }, []);
     parsedMap = parsedMap.map((parsedMapEntry) =>
       intersectSelectors(
@@ -978,31 +978,31 @@ function intersectSelectors(...selectors) {
     // Group siblings and split by combinators
     parsed = parsed.map((parsedSelector) =>
       parsedSelector.reduce(
-        (accumalatorParts, part) =>
+        (accumulatorParts, part) =>
           part.type === 'combinator'
             ? ['~', '+'].includes(part.content)
               ? [
-                  ...accumalatorParts.slice(0, -1),
+                  ...accumulatorParts.slice(0, -1),
                   {
-                    type: accumalatorParts.slice(-1)[0].type,
-                    tokens: [...accumalatorParts.slice(-1)[0].tokens, []]
+                    type: accumulatorParts.slice(-1)[0].type,
+                    tokens: [...accumulatorParts.slice(-1)[0].tokens, []]
                   }
                 ]
               : [
-                  ...accumalatorParts,
+                  ...accumulatorParts,
                   {
                     type: part.content === '>' ? 'parent' : 'ancestor',
                     tokens: []
                   }
                 ]
             : [
-                ...accumalatorParts.slice(0, -1),
+                ...accumulatorParts.slice(0, -1),
                 {
-                  type: accumalatorParts.slice(-1)[0].type,
+                  type: accumulatorParts.slice(-1)[0].type,
                   tokens: [
-                    ...accumalatorParts.slice(-1)[0].tokens.slice(0, -1),
+                    ...accumulatorParts.slice(-1)[0].tokens.slice(0, -1),
                     [
-                      ...(accumalatorParts.slice(-1)[0].tokens.slice(-1)[0] ||
+                      ...(accumulatorParts.slice(-1)[0].tokens.slice(-1)[0] ||
                         []),
                       part
                     ]
@@ -1114,22 +1114,22 @@ function intersectSelectors(...selectors) {
       let switchIndexes = [];
       const result = parsedSideBySide
         .reverse()
-        .reduce((accumalatorSiblingGroups, siblingGroup) => {
+        .reduce((accumulatorSiblingGroups, siblingGroup) => {
           if (Array.isArray(siblingGroup)) {
-            accumalatorSiblingGroups =
-              accumalatorSiblingGroups.concat(siblingGroup);
+            accumulatorSiblingGroups =
+              accumulatorSiblingGroups.concat(siblingGroup);
             if (
               siblingGroup.every(
                 (siblingGroupPart) => siblingGroupPart.combinator === ' '
               ) &&
               siblingGroup.length === 2
             ) {
-              switchIndexes.push(accumalatorSiblingGroups.length - 2);
+              switchIndexes.push(accumulatorSiblingGroups.length - 2);
             }
           } else {
-            accumalatorSiblingGroups.push(siblingGroup);
+            accumulatorSiblingGroups.push(siblingGroup);
           }
-          return accumalatorSiblingGroups;
+          return accumulatorSiblingGroups;
         }, []);
 
       switchIndexes = booleanCombinations(switchIndexes.length).map(
