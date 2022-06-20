@@ -931,6 +931,12 @@ function stringifyState(state) {
 }
 
 function intersectSelectors(...selectors) {
+  if (selectors.length === 1) {
+    return selectors[1];
+  } else if (selectors.length === 0) {
+    return '';
+  }
+
   // Recursively find intersection of rest first
   if (selectors.length !== 2) {
     selectors = [selectors[0], intersectSelectors(...selectors.slice(1))];
