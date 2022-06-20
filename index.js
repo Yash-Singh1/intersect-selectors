@@ -8,7 +8,7 @@ const parsel = require('parsel-js');
  * @property {string} [namespace='*'] The namespace of the selector ('*' if not
  *   specified). Default is `'*'`
  * @property {string} pseudoElement The pseudo element of the selector
- * @property {{ name: string; argument: string }[]} pseudoClasses List of
+ * @property {{ name: string; argument?: string }[]} pseudoClasses List of
  *   pseudo-classes that the selector matches
  * @property {{
  *   key: string;
@@ -783,6 +783,20 @@ function extractInfo(tokens) {
 }
 
 /**
+ * @type {[string, string][]} Pseudo-classes That can't occur at the same time
+ *   such as :enabled and :disabled
+ */
+const oppositePseudoClasses = [
+  ['read-only', 'read-write'],
+  ['valid', 'invalid'],
+  ['required', 'optional'],
+  ['valid', 'user-invalid'],
+  ['enabled', 'disabled'],
+  ['in-range', 'out-of-range'],
+  ['link', 'visited']
+];
+
+/**
  * Checks if two selector states have an intersection
  *
  * @param {SelectorState} token1 The first selector state
@@ -791,6 +805,7 @@ function extractInfo(tokens) {
  *   selector state
  */
 function intersects(token1, token2) {
+  /** @type {SelectorState} */
   const finalState = {};
 
   if (token1.namespace !== token2.namespace) {
@@ -846,7 +861,7 @@ function intersects(token1, token2) {
     ...new Set(token1.pseudoClasses.concat(token2.pseudoClasses))
   ];
   finalState.pseudoClasses = finalState.pseudoClasses.filter(
-    (pseudoClass) => pseudoClass != 'scope'
+    (pseudoClass) => pseudoClass.name !== 'scope'
   );
   finalState.attributes = Object.values(
     groupArray([...token1.attributes, ...token2.attributes], 'operator')
@@ -860,6 +875,99 @@ function intersects(token1, token2) {
         ? mergeArrays(...finalState.attributes)
         : [];
   }
+
+  /** @type {SelectorState[]} */
+  let notSelectors = [];
+  finalState.pseudoClasses = finalState.pseudoClasses.reduce(
+    (acc, nextPseudoClass) => {
+      if (nextPseudoClass.name !== 'not') {
+        acc.push(nextPseudoClass);
+      } else {
+        if (!notSelectors.includes(nextPseudoClass.argument)) {
+          notSelectors.push(nextPseudoClass);
+        }
+      }
+      return acc;
+    },
+    []
+  );
+
+  let dirs = [];
+  let langs = [];
+  finalState.pseudoClasses.forEach((pseudoClass) => {
+    if (pseudoClass.name === 'dir') {
+      dirs.push(pseudoClass.argument);
+    } else if (pseudoClass.name === 'lang') {
+      langs.push(pseudoClass.argument);
+    }
+  });
+  if (dirs.length > 1) {
+    for (const dir of dirs) {
+      if (dir !== dirs[0]) {
+        return false;
+      }
+    }
+    const firstOccurrence = finalState.pseudoClasses.findIndex(
+      (pseudoClass) => pseudoClass.name === 'dir'
+    );
+    finalState.pseudoClasses = finalState.pseudoClasses.filter(
+      (pseudoClass, pseudoClassIndex) => {
+        if (
+          pseudoClassIndex !== firstOccurrence &&
+          pseudoClass.name === 'dir'
+        ) {
+          return false;
+        }
+        return true;
+      }
+    );
+  }
+  if (langs.length > 1) {
+    for (const lang of langs) {
+      if (lang !== langs[0]) {
+        return false;
+      }
+    }
+    const firstOccurrence = finalState.pseudoClasses.findIndex(
+      (pseudoClass) => pseudoClass.name === 'lang'
+    );
+    finalState.pseudoClasses = finalState.pseudoClasses.filter(
+      (pseudoClass, pseudoClassIndex) => {
+        if (
+          pseudoClassIndex !== firstOccurrence &&
+          pseudoClass.name === 'lang'
+        ) {
+          return false;
+        }
+        return true;
+      }
+    );
+  }
+
+  const pseudoClassNames = finalState.pseudoClasses.map(
+    (pseudoClass) => pseudoClass.name
+  );
+  for (const oppositePseudoClass of oppositePseudoClasses) {
+    if (pseudoClassNames.includes(oppositePseudoClass[0]) && pseudoClassNames.includes(oppositePseudoClass[1])) {
+      return false;
+    }
+  }
+
+  let staticPseudoClasses = [];
+  finalState.pseudoClasses = finalState.pseudoClasses.reduce(
+    (acc, nextPseudoClass) => {
+      if (nextPseudoClass.argument) {
+        acc.push(nextPseudoClass);
+      } else {
+        if (!staticPseudoClasses.includes(nextPseudoClass.name)) {
+          staticPseudoClasses.push(nextPseudoClass.name);
+          acc.push(nextPseudoClass);
+        }
+      }
+      return acc;
+    },
+    []
+  );
 
   return finalState;
 }
@@ -932,7 +1040,7 @@ function stringifyState(state) {
 
 function intersectSelectors(...selectors) {
   if (selectors.length === 1) {
-    return selectors[1];
+    return selectors[0];
   } else if (selectors.length === 0) {
     return '';
   }

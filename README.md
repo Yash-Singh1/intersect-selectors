@@ -19,3 +19,5 @@ intersectSelectors(
 
 // Result: d a ~ b:nth-child(4):not([attr~='yo']) > b
 ```
+
+_NOTE: This program assumes that the CSS given matches the specification_
