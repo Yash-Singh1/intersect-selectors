@@ -5,7 +5,8 @@ const parsel = require('parsel-js');
 /**
  * @typedef {Object} SelectorState
  * @property {string} type The tag name of the selector
- * @property {string} [namespace='*'] The namespace of the selector ('*' if not specified)
+ * @property {string} [namespace='*'] The namespace of the selector ('*' if not
+ *   specified). Default is `'*'`
  * @property {string} pseudoElement The pseudo element of the selector
  * @property {{ name: string; argument: string }[]} pseudoClasses List of
  *   pseudo-classes that the selector matches
@@ -793,10 +794,7 @@ function intersects(token1, token2) {
   const finalState = {};
 
   if (token1.namespace !== token2.namespace) {
-    if (
-      token1.namespace !== '*' &&
-      token2.namespace !== '*'
-    ) {
+    if (token1.namespace !== '*' && token2.namespace !== '*') {
       return false;
     }
   } else {
@@ -804,7 +802,6 @@ function intersects(token1, token2) {
   }
 
   if (!finalState.namespace) {
-    console.log('here', token1, token2, finalState)
     if (token1.namespace && token1.namespace !== '*') {
       finalState.namespace = token1.namespace;
     } else if (token2.namespace && token2.namespace !== '*') {
@@ -848,6 +845,9 @@ function intersects(token1, token2) {
   finalState.pseudoClasses = [
     ...new Set(token1.pseudoClasses.concat(token2.pseudoClasses))
   ];
+  finalState.pseudoClasses = finalState.pseudoClasses.filter(
+    (pseudoClass) => pseudoClass != 'scope'
+  );
   finalState.attributes = Object.values(
     groupArray([...token1.attributes, ...token2.attributes], 'operator')
   ).map((attributeGroup) => intersectsAttributes(...attributeGroup));
@@ -873,7 +873,6 @@ function intersects(token1, token2) {
 function stringifyState(state) {
   let result = '';
 
-  console.log('state', state);
   if (state.namespace && state.namespace !== '*') {
     result = `${state.namespace}|`;
   }
@@ -1142,8 +1141,10 @@ function intersectSelectors(...selectors) {
       let switchIndexes = [];
       const result = parsedSideBySide
         .reverse()
-        .reduce((accumulatorSiblingGroups, siblingGroup) => {
+        .reduce((accumulatorSiblingGroups, siblingGroup, siblingGroupIndex) => {
           if (Array.isArray(siblingGroup)) {
+            if (siblingGroup[0].states[0].pseudoClasses[0].name === 'scope')
+              return accumulatorSiblingGroups;
             accumulatorSiblingGroups =
               accumulatorSiblingGroups.concat(siblingGroup);
             if (
@@ -1154,7 +1155,12 @@ function intersectSelectors(...selectors) {
             ) {
               switchIndexes.push(accumulatorSiblingGroups.length - 2);
             }
-          } else {
+          } else if (
+            siblingGroupIndex !== 0 ||
+            !siblingGroup.states[0] ||
+            !siblingGroup.states[0].pseudoClasses[0] ||
+            siblingGroup.states[0].pseudoClasses[0].name !== 'scope'
+          ) {
             accumulatorSiblingGroups.push(siblingGroup);
           }
           return accumulatorSiblingGroups;
